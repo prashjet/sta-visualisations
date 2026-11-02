@@ -22,16 +22,17 @@ function update() {
  const dataPrecision = p.n/p.sigma**2, priorPrecision = 1/p.lambda**2;
  const variance = 1/(dataPrecision+priorPrecision), mean = variance*(dataPrecision*xbar+priorPrecision*p.eta);
  const curves = [{m:xbar,s:p.sigma/Math.sqrt(p.n),c:'#2474b5',dash:'7 4'}, {m:p.eta,s:p.lambda,c:'#b76b27',dash:'3 4'}, {m:mean,s:Math.sqrt(variance),c:'#15816a',dash:''}];
- let lo = Math.min(p.mu,...curves.map(c=>c.m-4*c.s)), hi = Math.max(p.mu,...curves.map(c=>c.m+4*c.s));
- const pad = (hi-lo)*.03; lo-=pad; hi+=pad;
+ const lo = -10, hi = -2;
  const ymax = Math.max(...curves.map(c=>1/(c.s*Math.sqrt(2*Math.PI))))*1.12;
  const left=66,right=826,top=24,bottom=375;
  const X = x => left+(x-lo)/(hi-lo)*(right-left), Y = y => bottom-y/ymax*(bottom-top);
  svg.querySelectorAll(':scope > :not(title):not(desc)').forEach(el=>el.remove());
  for(let i=0;i<=4;i++) {const v=ymax*i/4,y=Y(v);element('line',{x1:left,x2:right,y1:y,y2:y,stroke:'#e4eae3'});element('text',{x:left-10,y:y+4,'text-anchor':'end'},v.toFixed(ymax>10?1:2));}
- for(let i=0;i<=6;i++) {const v=lo+(hi-lo)*i/6; element('text',{x:X(v),y:bottom+24,'text-anchor':'middle'},v.toFixed(1));}
+ for(let i=0;i<=8;i++) {const v=lo+(hi-lo)*i/8; element('text',{x:X(v),y:bottom+24,'text-anchor':'middle'},v.toFixed(1));}
+ if(p.mu >= lo && p.mu <= hi) {
  element('line',{x1:X(p.mu),x2:X(p.mu),y1:top,y2:bottom,stroke:'#87958a','stroke-dasharray':'2 5'});
  element('text',{x:X(p.mu),y:top-8,'text-anchor':'middle'},'true μ');
+ }
  curves.forEach(c=>{const points=[]; // Sample each Gaussian around its own centre to resolve narrow peaks.
  for(let i=0;i<=800;i++){const x=lo+(hi-lo)*i/800;points.push(x);}
  for(let i=-200;i<=200;i++) {const x=c.m+i*c.s/40;if(x>=lo&&x<=hi)points.push(x);}
