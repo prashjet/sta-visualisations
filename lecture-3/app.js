@@ -16,12 +16,15 @@ function element(name, attrs, text) {
  svg.appendChild(el); return el;
 }
 function update() {
+ const showPosterior = document.getElementById('show-posterior').checked;
+ document.getElementById('posterior-legend').hidden = !showPosterior;
+ document.querySelectorAll('.posterior-result').forEach(el=>el.hidden=!showPosterior);
  const p = Object.fromEntries(ids.map(id => [id, Number(controls[id].value)]));
  ids.forEach(id => document.getElementById(id+'-value').textContent = id==='n' ? p[id] : p[id].toFixed(2));
  const xbar = p.n === 0 ? 0 : p.mu + p.sigma*draws.slice(0,p.n).reduce((a,b)=>a+b,0)/p.n;
  const dataPrecision = p.n/p.sigma**2, priorPrecision = 1/p.lambda**2;
  const variance = 1/(dataPrecision+priorPrecision), mean = variance*(dataPrecision*xbar+priorPrecision*p.eta);
- const curves = [{m:xbar,s:p.sigma/Math.sqrt(p.n),c:'#2474b5',dash:'7 4'}, {m:p.eta,s:p.lambda,c:'#b76b27',dash:'3 4'}, {m:mean,s:Math.sqrt(variance),c:'#15816a',dash:''}].filter((c,i)=>p.n>0 || i>0);
+ const curves = [{m:xbar,s:p.sigma/Math.sqrt(p.n),c:'#2474b5',dash:'7 4'}, {m:p.eta,s:p.lambda,c:'#b76b27',dash:'3 4'}, {m:mean,s:Math.sqrt(variance),c:'#15816a',dash:''}].filter((c,i)=>(p.n>0 || i>0) && (i!==2 || showPosterior));
  const lo = -10, hi = -2;
  const ymax = Math.max(p.n === 0 ? 1 : 0,...curves.map(c=>1/(c.s*Math.sqrt(2*Math.PI))))*1.12;
  const left=66,right=826,top=24,bottom=375;
@@ -53,7 +56,8 @@ function update() {
  document.getElementById('weights').textContent=p.n === 0 ? 'With no observations, P(μ | X) = P(μ): the MAP is η and the posterior standard deviation is λ. The constant likelihood cannot be normalised over the whole real line; it is shown at its actual value of 1.' : `The MAP is a precision-weighted average: ${(100*w).toFixed(1)}% sample mean + ${(100*(1-w)).toFixed(1)}% prior mean. A larger n or smaller σ gives the data more weight; a smaller λ strengthens the prior.`;
  document.getElementById('chart-desc').textContent=p.n === 0 ? `No observations. Constant likelihood; posterior equals the prior, with mean ${p.eta} and standard deviation ${p.lambda}.` : `Likelihood centred at ${xbar.toFixed(3)}, prior at ${p.eta}, posterior at ${mean.toFixed(3)} with standard deviation ${Math.sqrt(variance).toFixed(3)}.`;
 }
+document.getElementById('show-posterior').addEventListener('change',update);
 ids.forEach(id=>controls[id].addEventListener('input',update));
 document.getElementById('resample').addEventListener('click',()=>{draws=makeDraws(crypto.getRandomValues(new Uint32Array(1))[0]);update();});
-document.getElementById('reset').addEventListener('click',()=>{ids.forEach((id,i)=>controls[id].value=defaults[i]);draws=makeDraws(46);update();});
+document.getElementById('reset').addEventListener('click',()=>{document.getElementById('show-posterior').checked=false;ids.forEach((id,i)=>controls[id].value=defaults[i]);draws=makeDraws(46);update();});
 draws=makeDraws(46);update();
