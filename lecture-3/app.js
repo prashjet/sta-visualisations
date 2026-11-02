@@ -18,12 +18,12 @@ function element(name, attrs, text) {
 function update() {
  const p = Object.fromEntries(ids.map(id => [id, Number(controls[id].value)]));
  ids.forEach(id => document.getElementById(id+'-value').textContent = id==='n' ? p[id] : p[id].toFixed(2));
- const xbar = p.mu + p.sigma*draws.slice(0,p.n).reduce((a,b)=>a+b,0)/p.n;
+ const xbar = p.n === 0 ? 0 : p.mu + p.sigma*draws.slice(0,p.n).reduce((a,b)=>a+b,0)/p.n;
  const dataPrecision = p.n/p.sigma**2, priorPrecision = 1/p.lambda**2;
  const variance = 1/(dataPrecision+priorPrecision), mean = variance*(dataPrecision*xbar+priorPrecision*p.eta);
- const curves = [{m:xbar,s:p.sigma/Math.sqrt(p.n),c:'#2474b5',dash:'7 4'}, {m:p.eta,s:p.lambda,c:'#b76b27',dash:'3 4'}, {m:mean,s:Math.sqrt(variance),c:'#15816a',dash:''}];
+ const curves = [{m:xbar,s:p.sigma/Math.sqrt(p.n),c:'#2474b5',dash:'7 4'}, {m:p.eta,s:p.lambda,c:'#b76b27',dash:'3 4'}, {m:mean,s:Math.sqrt(variance),c:'#15816a',dash:''}].filter((c,i)=>p.n>0 || i>0);
  const lo = -10, hi = -2;
- const ymax = Math.max(...curves.map(c=>1/(c.s*Math.sqrt(2*Math.PI))))*1.12;
+ const ymax = Math.max(p.n === 0 ? 1 : 0,...curves.map(c=>1/(c.s*Math.sqrt(2*Math.PI))))*1.12;
  const left=66,right=826,top=24,bottom=375;
  const X = x => left+(x-lo)/(hi-lo)*(right-left), Y = y => bottom-y/ymax*(bottom-top);
  svg.querySelectorAll(':scope > :not(title):not(desc)').forEach(el=>el.remove());
@@ -33,6 +33,8 @@ function update() {
  element('line',{x1:X(p.mu),x2:X(p.mu),y1:top,y2:bottom,stroke:'#87958a','stroke-dasharray':'2 5'});
  element('text',{x:X(p.mu),y:top-8,'text-anchor':'middle'},'true μ');
  }
+ if(p.n === 0) element('line',{x1:left,x2:right,y1:Y(1),y2:Y(1),stroke:'#2474b5','stroke-width':2.7,'stroke-dasharray':'7 4'});
+ document.getElementById('likelihood-label').textContent = p.n === 0 ? 'Likelihood (constant = 1)' : 'Likelihood (unit area)';
  curves.forEach(c=>{const points=[]; // Sample each Gaussian around its own centre to resolve narrow peaks.
  for(let i=0;i<=800;i++){const x=lo+(hi-lo)*i/800;points.push(x);}
  for(let i=-200;i<=200;i++) {const x=c.m+i*c.s/40;if(x>=lo&&x<=hi)points.push(x);}
@@ -43,13 +45,13 @@ function update() {
  });
  element('text',{x:(left+right)/2,y:bottom+55,'text-anchor':'middle'},'Candidate population mean μ (mag)');
  element('text',{transform:'translate(17 200) rotate(-90)','text-anchor':'middle'},'Density / unit-area likelihood');
- document.getElementById('mle').textContent=xbar.toFixed(3);
+ document.getElementById('mle').textContent=p.n === 0 ? 'Undefined' : xbar.toFixed(3);
  document.getElementById('map').textContent=mean.toFixed(3);
  document.getElementById('width').textContent=Math.sqrt(variance).toFixed(3);
- document.getElementById('sample').textContent=`${p.n} simulated clusters · sample mean x̄ = ${xbar.toFixed(3)} mag · likelihood width σ/√n = ${(p.sigma/Math.sqrt(p.n)).toFixed(3)} mag`;
+ document.getElementById('sample').textContent=p.n === 0 ? 'No observations · likelihood is constant in μ · posterior equals prior' : `${p.n} simulated clusters · sample mean x̄ = ${xbar.toFixed(3)} mag · likelihood width σ/√n = ${(p.sigma/Math.sqrt(p.n)).toFixed(3)} mag`;
  const w = dataPrecision*variance;
- document.getElementById('weights').textContent=`The MAP is a precision-weighted average: ${(100*w).toFixed(1)}% sample mean + ${(100*(1-w)).toFixed(1)}% prior mean. A larger n or smaller σ gives the data more weight; a smaller λ strengthens the prior.`;
- document.getElementById('chart-desc').textContent=`Likelihood centred at ${xbar.toFixed(3)}, prior at ${p.eta}, posterior at ${mean.toFixed(3)} with standard deviation ${Math.sqrt(variance).toFixed(3)}.`;
+ document.getElementById('weights').textContent=p.n === 0 ? 'With no observations, P(μ | X) = P(μ): the MAP is η and the posterior standard deviation is λ. The constant likelihood cannot be normalised over the whole real line; it is shown at its actual value of 1.' : `The MAP is a precision-weighted average: ${(100*w).toFixed(1)}% sample mean + ${(100*(1-w)).toFixed(1)}% prior mean. A larger n or smaller σ gives the data more weight; a smaller λ strengthens the prior.`;
+ document.getElementById('chart-desc').textContent=p.n === 0 ? `No observations. Constant likelihood; posterior equals the prior, with mean ${p.eta} and standard deviation ${p.lambda}.` : `Likelihood centred at ${xbar.toFixed(3)}, prior at ${p.eta}, posterior at ${mean.toFixed(3)} with standard deviation ${Math.sqrt(variance).toFixed(3)}.`;
 }
 ids.forEach(id=>controls[id].addEventListener('input',update));
 document.getElementById('resample').addEventListener('click',()=>{draws=makeDraws(crypto.getRandomValues(new Uint32Array(1))[0]);update();});
