@@ -4,9 +4,13 @@ Interactive companions to Statistics and Data for Astrophysicists (2026W).
 
 Website: https://prashjet.github.io/sta-visualisations/
 
-## Lecture 3
+## Lecture 4
 
-The [Lecture 3 index](https://prashjet.github.io/sta-visualisations/lecture-3/) links to separate visualisation pages. Posterior curves start hidden and can be revealed with a checkbox.
+[Sampling distributions](https://prashjet.github.io/sta-visualisations/lecture-4/sampling-distributions/) provides population, individual-sample and repeated-statistic panels. Five population families; mean, sample standard deviation and variance, or categorical sample proportion. Normal overlays use theoretical sampling moments for means/proportions and fitted moments for other statistics. Changing the model or sample size clears accumulated statistics.
+
+## Lecture 5
+
+The [Lecture 5 index](https://prashjet.github.io/sta-visualisations/lecture-5/) links to separate visualisation pages. Posterior curves start hidden and can be revealed with a checkbox.
 
 ### Gaussian update
 
@@ -19,3 +23,5 @@ Static HTML, CSS and JavaScript, without external dependencies. Serve this direc
 Slides 49–53: Gaussian parallax measurement likelihood with a uniform distance prior. The upper bound slider ends at infinity, switching to an improper prior and posterior; no finite-window normalisation or posterior moments are reported in that case. Finite priors use log-scaled numerical quadrature. Distance axes remain fixed at −5000–5000 pc. A dashed mathematical likelihood extension is shown for negative distances; the prior and posterior are zero there.
 
 The parallax demo includes a true-distance slider and a Gaussian measurement panel. Observed parallax is generated as 1/θ_true + σz; z stays fixed while sliders move and is redrawn with “New measurement”. True distance markers are for comparison only and do not enter the inference.
+
+Former lecture-3 page URLs redirect to the corresponding lecture-5 pages.
