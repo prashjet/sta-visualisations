@@ -5,9 +5,12 @@ const blue='#2474b5', orange='#b76b27', green='#15816a';
 function add(svg, tag, attrs, text){const e=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));if(text!==undefined)e.textContent=text;svg.appendChild(e);return e;}
 function chart(svg, curves, ymax, ylabel, limit){
  svg.replaceChildren();const l=76,r=826,t=16,b=225;
- const X=x=>l+x/5000*(r-l),Y=y=>b-y/ymax*(b-t);
+ const X=x=>l+(x+5000)/10000*(r-l),Y=y=>b-y/ymax*(b-t);
+ add(svg,'rect',{x:l,y:t,width:X(0)-l,height:b-t,fill:'#f1eceb'});
+ add(svg,'text',{x:(l+X(0))/2,y:t+13,'text-anchor':'middle'},'θ < 0 · excluded by prior');
+ add(svg,'line',{x1:X(0),x2:X(0),y1:t,y2:b,stroke:'#b9aaa6'});
  for(let i=0;i<=4;i++){let y=ymax*i/4;add(svg,'line',{x1:l,x2:r,y1:Y(y),y2:Y(y),stroke:'#e4eae3'});add(svg,'text',{x:l-10,y:Y(y)+4,'text-anchor':'end'},y===0?'0':y<.01?y.toExponential(1):y.toFixed(2));}
- for(let x=0;x<=5000;x+=1000)add(svg,'text',{x:X(x),y:b+22,'text-anchor':'middle'},x);
+ for(let x=-5000;x<=5000;x+=1000)add(svg,'text',{x:X(x),y:b+22,'text-anchor':'middle'},x);
  if(Number.isFinite(limit)){add(svg,'line',{x1:X(limit),x2:X(limit),y1:t,y2:b,stroke:'#9a8b73','stroke-dasharray':'3 4'});add(svg,'text',{x:X(limit)-5,y:t+12,'text-anchor':'end'},'θ_lim');}
  const truth=Number($('truth').value);
  add(svg,'line',{x1:X(truth),x2:X(truth),y1:t,y2:b,stroke:'#7a617f','stroke-dasharray':'2 5'});
@@ -50,10 +53,15 @@ function update(){
  const xs=Array.from({length:2501},(_,i)=>i*2);
  // Include points around a narrow likelihood peak as well as a uniform grid.
  if(v>0){const center=1/v,width=s/v**2;for(let i=-200;i<=200;i++){const x=center+i*width/40;if(x>0&&x<5000)xs.push(x);}}xs.sort((a,b)=>a-b);
- chart($('likelihood-chart'),[{color:blue,dash:'7 4',points:xs.map(x=>[x,global.f(x)])}],1.12,'Relative likelihood',lim);
+ const negativeXs=Array.from({length:2501},(_,i)=>-5000+i*2);
+ if(v<0){const center=1/v,width=s/v**2;for(let i=-200;i<=200;i++){const x=center+i*width/40;if(x>-5000&&x<0)negativeXs.push(x);}}negativeXs.sort((a,b)=>a-b);
+ // The mathematical extension has its global maximum at 1/ϖ on either side.
+ // Keep separate paths: the model is undefined at zero (both limits are zero).
+ const extended=x=>x===0?0:Math.exp(-.5*((v-1/x)/s)**2);
+ chart($('likelihood-chart'),[{color:blue,dash:'7 4',points:negativeXs.map(x=>[x,extended(x)])},{color:blue,points:xs.map(x=>[x,extended(x)])}],1.12,'Relative likelihood',lim);
  let curves,ymax;
- if(improper){curves=[{color:orange,dash:'3 4',points:[[0,1],[5000,1]]}];if(show)curves.push({color:green,fill:true,points:xs.map(x=>[x,global.f(x)])});ymax=1.12;}
- else{curves=[{color:orange,dash:'3 4',points:[[0,0],[0,1/lim],[lim,1/lim],[lim,0],[5000,0]]}];if(show)curves.push({color:green,fill:true,points:[...result.grid.map(([x,y])=>[x,y/result.area]),[lim,0],[5000,0]]});ymax=1.12*Math.max(1/lim,show?1/result.area:0);}
+ if(improper){curves=[{color:orange,dash:'3 4',points:[[-5000,0],[0,0],[0,1],[5000,1]]}];if(show)curves.push({color:green,fill:true,points:[[-5000,0],...xs.map(x=>[x,global.f(x)])]});ymax=1.12;}
+ else{curves=[{color:orange,dash:'3 4',points:[[-5000,0],[0,0],[0,1/lim],[lim,1/lim],[lim,0],[5000,0]]}];if(show)curves.push({color:green,fill:true,points:[[-5000,0],...result.grid.map(([x,y])=>[x,y/result.area]),[lim,0],[5000,0]]});ymax=1.12*Math.max(1/lim,show?1/result.area:0);}
  chart($('density-chart'),curves,ymax,improper?'Unnormalised shape':'Probability density (pc⁻¹)',lim);
  $('prior-label').textContent=improper?'Improper prior P*(θ) = 1':'Prior P(θ)';$('posterior-label').textContent=improper?'Improper posterior P*(θ | ϖ)':'Posterior P(θ | ϖ)';$('posterior-label').hidden=!show;$('posterior-results').hidden=!show;
  $('status').className='status'+(improper?' improper':'');
