@@ -73,4 +73,4 @@ function update(){
 }
 ['truth','sigma','limit'].forEach(id=>$(id).addEventListener('input',update));$('show-posterior').addEventListener('change',update);
 $('resample').addEventListener('click',()=>{const u=crypto.getRandomValues(new Uint32Array(2));const a=(u[0]+.5)/4294967296,b=(u[1]+.5)/4294967296;noise=Math.sqrt(-2*Math.log(a))*Math.cos(2*Math.PI*b);update();});
-$('reset').addEventListener('click',()=>{$('truth').value=1000;$('sigma').value=.0003;$('limit').value=5100;$('show-posterior').checked=false;noise=.65;update();});update();
+$('reset').addEventListener('click',()=>{$('truth').value=200;$('sigma').value=.001;$('limit').value=5100;$('show-posterior').checked=false;noise=.65;update();});update();
