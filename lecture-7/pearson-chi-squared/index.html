@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pearson’s chi-squared reference distribution · Lecture 7</title>
+  <link rel="stylesheet" href="../../style.css">
+  <style>
+    nav { margin-bottom: 22px; }
+    h1 { font-size: clamp(2rem, 3.7vw, 3.25rem); }
+    .buttons { flex-wrap: wrap; margin: 18px 0; }
+    button, .legend { font-size: .9rem; }
+    .pearson-plots { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; }
+    .pearson-plots svg text { font-size: 15px; }
+    .pearson-plots .plot-heading { font-size: 1.05rem; }
+    .pearson-plots .note { font-size: .88rem; }
+    .pearson-plots svg { margin-top: 8px; }
+    .result { margin: 8px 0; }
+    .contributions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 6px; }
+    @media (max-width: 760px) {
+      .pearson-plots { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="../">← Lecture 7</a><span>STA · 2026W</span></nav>
+  <h1>Pearson’s chi-squared reference distribution</h1>
+  <p class="intro">50 independent observations · Null probabilities for A–D: 0.10, 0.20, 0.30, 0.40</p>
+  <div class="buttons">
+    <button id="one">Draw one sample</button>
+    <button id="thousand">Draw 1,000 samples</button>
+    <button id="reset">Reset</button>
+  </div>
+  <div class="layout pearson-plots">
+    <section class="plot-panel">
+      <h2 class="plot-heading">Observed and expected counts</h2>
+      <div class="legend">
+        <span style="--c:#2474b5">Observed</span>
+        <span style="--c:#a1b3a8">Expected</span>
+      </div>
+      <svg id="counts" viewBox="0 0 520 250" role="img" aria-label="Expected counts for A through D"></svg>
+      <p class="math result"><var>T</var> = Σᵢ (<var>O</var>ᵢ − <var>E</var>ᵢ)² / <var>E</var>ᵢ = <strong id="statistic">—</strong></p>
+      <div class="note">
+        Contributions to <var>T</var>
+        <div class="contributions" id="contributions"></div>
+      </div>
+    </section>
+    <section class="plot-panel">
+      <h2 class="plot-heading">Sampling distribution of <var>T</var></h2>
+      <div class="legend">
+        <span style="--c:#15816a">Simulated</span>
+        <span style="--c:#b76b27">χ²₃ approximate reference</span>
+        <span style="--c:#7a417b">Latest <var>T</var></span>
+      </div>
+      <svg id="sampling" viewBox="0 0 520 250" role="img" aria-label="Sampling distribution and approximate chi-squared reference with 3 degrees of freedom"></svg>
+      <p class="result" id="summary" role="status">Samples drawn: 0</p>
+      <p class="note">Each sample of 50 observations gives one value of T.<br>
+        The total count is fixed, so knowing three counts determines the fourth.</p>
+    </section>
+  </div>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
