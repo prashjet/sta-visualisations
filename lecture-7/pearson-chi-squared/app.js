@@ -2,6 +2,7 @@
 
 const $ = id => document.getElementById(id);
 const categories = ['A', 'B', 'C', 'D'];
+const controls = ['apply', 'one', 'thousand', 'ten-thousand', 'reset'];
 const initialRight = 16;
 const left = 65, right = 502, plotTop = 14, bottom = 198;
 const statistics = [];
@@ -123,13 +124,32 @@ function render() {
   renderSampling();
 }
 
-function draw(count) {
+function accumulate(count) {
   for (let i = 0; i < count; i++) {
     latest = drawSample();
     statistics.push(latest.statistic);
     xMax = Math.max(xMax, 4 * (Math.floor(latest.statistic / 4) + 1));
   }
+}
+
+function draw(count) {
+  accumulate(count);
   render();
+}
+
+async function drawBatch(count) {
+  for (const id of controls) $(id).disabled = true;
+  $('summary').textContent = 'Drawing ' + count.toLocaleString('en-US') + ' samples…';
+  const batchSize = Math.max(1, Math.floor(250000 / sampleSize));
+  try {
+    for (let remaining = count; remaining > 0; remaining -= batchSize) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+      accumulate(Math.min(remaining, batchSize));
+    }
+    render();
+  } finally {
+    for (const id of controls) $(id).disabled = false;
+  }
 }
 
 function applyModel() {
@@ -155,13 +175,14 @@ function applyModel() {
 
 $('model').addEventListener('submit', event => {
   event.preventDefault();
-  applyModel();
+  if (!$('apply').disabled) applyModel();
 });
 $('one').addEventListener('click', () => draw(1));
 $('thousand').addEventListener('click', () => draw(1000));
+$('ten-thousand').addEventListener('click', () => drawBatch(10000));
 $('reset').addEventListener('click', () => {
   $('model').reset();
   applyModel();
 });
 applyModel();
-for (const id of ['apply', 'one', 'thousand', 'reset']) $(id).disabled = false;
+for (const id of controls) $(id).disabled = false;
