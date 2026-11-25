@@ -137,3 +137,4 @@ $('reset').addEventListener('click', () => {
   render();
 });
 render();
+for (const id of ['one', 'thousand', 'reset']) $(id).disabled = false;
