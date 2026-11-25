@@ -9,7 +9,7 @@ let cumulative = 0;
 const cutoffs = expected.map(count => (cumulative += count) / sampleSize);
 const binWidth = 1;
 const initialRight = 16;
-const left = 65, right = 502, top = 14, bottom = 198;
+const left = 65, right = 502, plotTop = 14, bottom = 198;
 const bins = [];
 let sampleCount = 0;
 let latest = null;
@@ -52,7 +52,7 @@ function bar(svg, x, y, width, fill) {
 function renderCounts() {
   const svg = $('counts');
   const observed = latest?.observed;
-  const y = count => bottom - count / sampleSize * (bottom - top);
+  const y = count => bottom - count / sampleSize * (bottom - plotTop);
   const groupWidth = (right - left) / categories.length;
   axes(svg, [0, 10, 20, 30, 40, 50], y, 'Count', 'Category');
   categories.forEach((category, i) => {
@@ -85,7 +85,7 @@ function renderSampling() {
   // Keep the usual density scale, with room for concentrated early draws.
   const yMax = peak > 0.5 ? 1 : peak > 0.3 ? 0.5 : 0.3;
   const x = value => left + value / xMax * (right - left);
-  const y = density => bottom - density / yMax * (bottom - top);
+  const y = density => bottom - density / yMax * (bottom - plotTop);
   const divisions = yMax === 0.3 ? 3 : 5;
   const ticks = Array.from({ length: divisions + 1 }, (_, i) => i * yMax / divisions);
   axes(svg, ticks, y, 'Density', 'T', tick => tick.toFixed(1));
