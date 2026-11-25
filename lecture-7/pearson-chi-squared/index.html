@@ -9,6 +9,10 @@
     nav { margin-bottom: 22px; }
     h1 { font-size: clamp(2rem, 3.7vw, 3.25rem); }
     .buttons { flex-wrap: wrap; margin: 18px 0; }
+    .model { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 18px; }
+    .model label { display: grid; gap: 4px; font-size: .85rem; }
+    .model input { width: 5.5rem; padding: 8px; font: inherit; border: 1px solid #cbd6cc; border-radius: 7px; }
+    .model-status:empty { display: none; }
     button, .legend { font-size: .9rem; }
     .pearson-plots { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; }
     .pearson-plots svg text { font-size: 15px; }
@@ -26,7 +30,15 @@
 <main>
   <nav><a href="../">← Lecture 7</a><span>STA · 2026W</span></nav>
   <h1>Pearson’s chi-squared reference distribution</h1>
-  <p class="intro">50 independent observations · Null probabilities for A–D: 0.10, 0.20, 0.30, 0.40</p>
+  <form class="model" id="model">
+    <label>Sample size <input id="n" type="number" min="1" max="10000" value="50" required></label>
+    <label>Null p(A) <input id="p-A" type="number" min="0.000001" max="1" step="any" value="0.10" required></label>
+    <label>Null p(B) <input id="p-B" type="number" min="0.000001" max="1" step="any" value="0.20" required></label>
+    <label>Null p(C) <input id="p-C" type="number" min="0.000001" max="1" step="any" value="0.30" required></label>
+    <label>Null p(D) <input id="p-D" type="number" min="0.000001" max="1" step="any" value="0.40" required></label>
+    <button id="apply" type="submit" disabled>Apply model</button>
+  </form>
+  <p id="model-status" class="note model-status" role="status"></p>
   <div class="buttons">
     <button type="button" id="one" disabled>Draw one sample</button>
     <button type="button" id="thousand" disabled>Draw 1,000 samples</button>
@@ -55,12 +67,12 @@
       </div>
       <svg id="sampling" viewBox="0 0 520 250" role="img" aria-label="Sampling distribution and approximate chi-squared reference with 3 degrees of freedom"></svg>
       <p class="result" id="summary" role="status">Loading simulation…</p>
-      <p class="note">Each sample of 50 observations gives one value of T.<br>
+      <p class="note">Each sample of <span id="sample-size">50</span> observations gives one value of T.<br>
         The total count is fixed, so knowing three counts determines the fourth.</p>
     </section>
   </div>
 </main>
 <noscript><p>Enable JavaScript to run the simulation.</p></noscript>
-<script type="module" src="app.js?v=pearson-3" onerror="document.getElementById('summary').textContent = 'The simulation script could not load. Reload to try again.'"></script>
+<script type="module" src="app.js?v=pearson-4" onerror="document.getElementById('summary').textContent = 'The simulation script could not load. Reload to try again.'"></script>
 </body>
 </html>

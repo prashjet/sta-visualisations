@@ -2,16 +2,10 @@
 
 const $ = id => document.getElementById(id);
 const categories = ['A', 'B', 'C', 'D'];
-const sampleSize = 50;
-const probabilities = [0.10, 0.20, 0.30, 0.40];
-const expected = probabilities.map(p => sampleSize * p);
-let cumulative = 0;
-const cutoffs = expected.map(count => (cumulative += count) / sampleSize);
-const binWidth = 1;
 const initialRight = 16;
 const left = 65, right = 502, plotTop = 14, bottom = 198;
-const bins = [];
-let sampleCount = 0;
+const statistics = [];
+let sampleSize, expected, cutoffs;
 let latest = null;
 let xMax = initialRight;
 
@@ -54,14 +48,16 @@ function renderCounts() {
   const observed = latest?.observed;
   const y = count => bottom - count / sampleSize * (bottom - plotTop);
   const groupWidth = (right - left) / categories.length;
-  axes(svg, [0, 10, 20, 30, 40, 50], y, 'Count', 'Category');
+  const tickStep = Math.ceil(sampleSize / 5);
+  const ticks = Array.from({ length: Math.floor(sampleSize / tickStep) + 1 }, (_, i) => i * tickStep);
+  axes(svg, ticks, y, 'Count', 'Category');
   categories.forEach((category, i) => {
     const x = left + (i + 0.5) * groupWidth;
     bar(svg, x + 3, y(expected[i]), 30, '#a1b3a8');
     if (observed) bar(svg, x - 33, y(observed[i]), 30, '#2474b5');
     add(svg, 'text', { x, y: bottom + 21, 'text-anchor': 'middle' }, category);
   });
-  const expectedLabel = 'Expected counts for A through D: ' + expected.join(', ');
+  const expectedLabel = 'Expected counts for A through D: ' + expected.map(value => Number(value.toPrecision(6))).join(', ');
   svg.setAttribute('aria-label', observed
     ? expectedLabel + '. Observed counts: ' + observed.join(', ')
     : expectedLabel);
@@ -80,15 +76,26 @@ function referenceDensity(t) {
 
 function renderSampling() {
   const svg = $('sampling');
-  const densities = bins.map(count => count / (sampleCount * binWidth));
-  const peak = Math.max(0, ...densities);
-  // Keep the usual density scale, with room for concentrated early draws.
-  const yMax = peak > 0.5 ? 1 : peak > 0.3 ? 0.5 : 0.3;
+  const sampleCount = statistics.length;
+  const binWidth = sampleCount < 200 ? 1 : sampleCount < 2000 ? 0.5 : sampleCount < 10000 ? 0.25 : 0.125;
+  const bins = new Map();
+  for (const statistic of statistics) {
+    const bin = Math.floor(statistic / binWidth);
+    bins.set(bin, (bins.get(bin) ?? 0) + 1);
+  }
+  const densities = new Map();
+  let peak = 0;
+  for (const [bin, count] of bins) {
+    const density = count / (sampleCount * binWidth);
+    densities.set(bin, density);
+    peak = Math.max(peak, density);
+  }
+  const yMax = peak <= 0.3 ? 0.3 : peak <= 0.5 ? 0.5 : Math.ceil(peak);
   const x = value => left + value / xMax * (right - left);
   const y = density => bottom - density / yMax * (bottom - plotTop);
-  const divisions = yMax === 0.3 ? 3 : 5;
+  const divisions = yMax === 0.3 ? 3 : yMax === 0.5 ? 5 : 4;
   const ticks = Array.from({ length: divisions + 1 }, (_, i) => i * yMax / divisions);
-  axes(svg, ticks, y, 'Density', 'T', tick => tick.toFixed(1));
+  axes(svg, ticks, y, 'Density', 'T', tick => Number(tick.toFixed(2)).toString());
   const step = xMax <= 24 ? 4 : 4 * Math.ceil(xMax / 32);
   for (let tick = 0; tick <= xMax; tick += step) {
     add(svg, 'text', { x: x(tick), y: bottom + 23, 'text-anchor': 'middle' }, tick);
@@ -97,7 +104,7 @@ function renderSampling() {
     if (density > 0) bar(svg, x(i * binWidth), y(density), x(binWidth) - x(0), '#77b4a2');
   });
   const curve = Array.from({ length: 401 }, (_, i) => {
-    const t = xMax * i / 400;
+    const t = i === 400 ? xMax : Math.min(xMax, 40) * i / 400;
     return (i ? 'L' : 'M') + x(t).toFixed(2) + ',' + y(referenceDensity(t)).toFixed(2);
   });
   add(svg, 'path', { d: curve.join(' '), fill: 'none', stroke: '#b76b27', 'stroke-width': 3 });
@@ -108,7 +115,7 @@ function renderSampling() {
       fill: '#7a417b'
     });
   }
-  $('summary').textContent = 'Samples drawn: ' + sampleCount.toLocaleString('en-US');
+  $('summary').textContent = 'Samples drawn: ' + sampleCount.toLocaleString('en-US') + ' · Bin width: ' + binWidth;
 }
 
 function render() {
@@ -119,22 +126,42 @@ function render() {
 function draw(count) {
   for (let i = 0; i < count; i++) {
     latest = drawSample();
-    const bin = Math.floor(latest.statistic / binWidth);
-    bins[bin] = (bins[bin] ?? 0) + 1;
-    xMax = Math.max(xMax, 4 * Math.ceil((bin + 1) * binWidth / 4));
+    statistics.push(latest.statistic);
+    xMax = Math.max(xMax, 4 * (Math.floor(latest.statistic / 4) + 1));
   }
-  sampleCount += count;
   render();
 }
 
+function applyModel() {
+  const n = $('n').valueAsNumber;
+  const probabilities = categories.map(category => $('p-' + category).valueAsNumber);
+  const sum = probabilities.reduce((total, probability) => total + probability, 0);
+  if (Math.abs(sum - 1) > 1e-9) {
+    $('model-status').textContent = 'Null probabilities must add up to 1.';
+    return;
+  }
+  $('model-status').textContent = '';
+  sampleSize = n;
+  expected = probabilities.map(probability => n * probability);
+  let cumulative = 0;
+  cutoffs = probabilities.map(probability => (cumulative += probability));
+  cutoffs[cutoffs.length - 1] = 1;
+  statistics.length = 0;
+  latest = null;
+  xMax = initialRight;
+  $('sample-size').textContent = n;
+  render();
+}
+
+$('model').addEventListener('submit', event => {
+  event.preventDefault();
+  applyModel();
+});
 $('one').addEventListener('click', () => draw(1));
 $('thousand').addEventListener('click', () => draw(1000));
 $('reset').addEventListener('click', () => {
-  bins.length = 0;
-  sampleCount = 0;
-  latest = null;
-  xMax = initialRight;
-  render();
+  $('model').reset();
+  applyModel();
 });
-render();
-for (const id of ['one', 'thousand', 'reset']) $(id).disabled = false;
+applyModel();
+for (const id of ['apply', 'one', 'thousand', 'reset']) $(id).disabled = false;
